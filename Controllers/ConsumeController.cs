@@ -18,7 +18,7 @@ namespace Consummer_api.Controllers
     [ApiController]
     public class ConsumeController : ControllerBase
     {
-        private readonly CustomMessageDbContext _context;
+        private CustomMessageDbContext _context;
         private readonly ILogger<ConsumeController> _logger;
         public ConsumeController(
             CustomMessageDbContext context,
@@ -42,7 +42,7 @@ namespace Consummer_api.Controllers
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-
+                CustomMessage record = new CustomMessage();
                 channel.QueueDeclare(queue: "Bpi",
                                      durable: false,
                                      exclusive: false,
@@ -50,18 +50,22 @@ namespace Consummer_api.Controllers
                                      arguments: null);
 
                 var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += async (model, ea) =>
+                consumer.Received += (model, ea) =>
                 {
                     var body = ea.Body.ToArray();
                     var message = Encoding.UTF8.GetString(body);
                     queueItems.Add(message);
-                    // Store in DB
-                    CustomMessage record = JsonConvert.DeserializeObject<CustomMessage>(message);
-                    _context.Message.Add(record);
-                    await _context.SaveChangesAsync();
+                    // Store into In-Memeory DB
                     
+                    record = JsonConvert.DeserializeObject<CustomMessage>(message);
                     Console.WriteLine(" [x] Received {0}", message);
                 };
+                if (record.bpi != null)
+                {
+                    _context.Add(record);
+                    await _context.SaveChangesAsync();
+                }
+                
                 channel.BasicConsume(queue: "Bpi",
                                      autoAck: true,
                                      consumer: consumer);

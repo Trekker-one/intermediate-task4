@@ -22,6 +22,8 @@ namespace Consummer_api
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            Environment.SetEnvironmentVariable("RABBITMQ_HOST", "localhost");
+            Environment.SetEnvironmentVariable("RABBITMQ_PORT", "5672");
         }
 
         public IConfiguration Configuration { get; }
@@ -31,7 +33,7 @@ namespace Consummer_api
         {
 
             services.AddControllers();
-            services.AddDbContext<CustomMessageDbContext>(opt => opt.UseInMemoryDatabase("Message"));
+            services.AddDbContext<CustomMessageDbContext>(opt => opt.UseInMemoryDatabase("MessageDB"));
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consummer_api", Version = "v1" });
